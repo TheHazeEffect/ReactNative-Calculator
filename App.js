@@ -10,20 +10,24 @@ const inputButtons = [
 	[4,5,6, '*'],
 	[7,8,9, '-'],
 	[0,'.','=','+'],
-	['C','CE']
+	['C','CE','(',')']
 ];
+
+var controlStateHistory = []
 export default class ReactCalculator extends Component {
 
 	constructor(props){
 		super(props);
 
 		this.state = {
-			previousInputValue: 0,
+			controlState:1,
+			previousControlState:1,
 			inputValue: 0,
-			selectedSymbol: null,
-			selectedDecimalPoint: null,
-			fractionPrecision: 0,
-			resultFound: null
+			openParenthesisCount:0,
+			closeParenthesisCount:0,
+			MixedNumber: null,
+			resultFound: null,
+			negativeNumber:null
 		}
 	}
 
@@ -38,7 +42,7 @@ export default class ReactCalculator extends Component {
 				</View>
 			</View>
         )
-    }
+    } 
 	/**
 	*For Each row in 'inputButtons', create a row VIew and add create
 	*an input button for each input in the row
@@ -54,7 +58,7 @@ export default class ReactCalculator extends Component {
 			for(var i=0;i<row.length;i++){
 				let input = row[i];
 				inputRow.push(
-					<InputButton 
+					<InputButton
 						value={input}
 						highlight={this.state.selectedSymbol===input}
 						onPress={this._onInputButtonPressed.bind(this,input)} 
@@ -74,133 +78,206 @@ export default class ReactCalculator extends Component {
 		switch(typeof input){
 			case 'number' :
 				return this._handleNumberInput(input)
-			case 'string':
+			case 'string' :
 				return this._handleStringInput(input)
 		}
 	}
 
 	_handleStringInput(str){
+		let inputValue = this.state.inputValue,
+		openParenthesisCount = this.state.openParenthesisCount,
+		closeParenthesisCount = this.state.closeParenthesisCount,
+		controlState = this.state.controlState,
+		MixedNumber = this.state.MixedNumber,
+		resultFound = this.state.resultFound,
+		negativeNumber = this.state.negativeNumber;
+
 		switch(str){
 			case 'C' :
+				var previousControlState = controlStateHistory.pop()
+				if(controlState==7)
+				{
+					this.setState({
+						negativeNumber:null
+					})
+				}
+				inputValue = inputValue.slice(0,-1)
 				this.setState({
-					inputValue: 0
+					inputValue: inputValue,
+					controlState: previousControlState
 				});
 				break;
 			case 'CE':
+			
 				this.setState({
-					previousInputValue: 0,
+					controlState:1,
 					inputValue: 0,
-					selectedSymbol: null,
-					selectedDecimalPoint: null,
-					fractionPrecision: 0,
-					resultFound:null
+					openParenthesisCount:0,
+					closeParenthesisCount:0,
+					MixedNumber: null,
+					resultFound: null,
+					negativeNumber:null
 				});
+				controlStateHistory.length = 0
 				break;
 			case '.' :
-				let isfraction = this.state.selectedDecimalPoint;
-				//TO protect against pressing the decimal point twice 
-				if(!isfraction)
-				{
-					let fractionPrecision = this.state.fractionPrecision;
+				if( (controlState==3 || controlState==4 || controlState==1 || controlState == 7) && MixedNumber == null)
+				{	
+					controlStateHistory.push(controlState)
 					this.setState({
-						selectedDecimalPoint: true,
-						fractionPrecision: fractionPrecision+1
-					});
+						inputValue: inputValue + ".",
+						controlState: 6,
+						MixedNumber: true,
+						negativeNumber:null
+					})	
+				}
+				break;
+			case '(' :
+				if( (controlState == 1 || controlState == 7 || controlState == 2 || controlState == 4) && resultFound != true )
+				{
+					controlStateHistory.push(controlState)
+					if(inputValue==0)
+					{
+						this.setState({
+							//inputValue: [inputValue == 0 ? "(" : inputValue + "("], // Commented out because buggs out the delete button
+							inputValue: "(",
+						})
+					}
+					else
+					{
+						this.setState({
+							//inputValue: [inputValue == 0 ? "(" : inputValue + "("], // see above comment
+							inputValue: inputValue + "(",
+						})
+					}
+					this.setState({
+						openParenthesisCount : openParenthesisCount + 1,
+						controlState:2,
+						negativeNumber:null
+					})
+				}
+				break;
+			case ')' :
+				if( (controlState == 3 || controlState == 5) && openParenthesisCount>closeParenthesisCount)
+				{
+					controlStateHistory.push(controlState)
+					this.setState({
+						inputValue: inputValue + ")",
+						closeParenthesisCount: closeParenthesisCount + 1,
+						controlState:5,
+						MixedNumber: null,
+						negativeNumber:null
+					})
 				}
 				break;
 			case '/' :
-			case '*' :
-			case '+' :
-			case '-' :
-				this.setState({
-					selectedSymbol:str,
-					previousInputValue:this.state.inputValue,
-					inputValue:0,
-					selectedDecimalPoint:null,
-					fractionPrecision:0
-				});
-				break;
-			case '=':
-				let symbol = this.state.selectedSymbol,
-				inputValue = this.state.inputValue,
-				previousInputValue = this.state.previousInputValue;
-
-				if(!symbol){
-					return;
+				if( (controlState == 3 || controlState == 5) || resultFound == true )
+				{
+					controlStateHistory.push(controlState)
+					this.setState({
+						inputValue: inputValue + "/",
+						controlState:4,
+						MixedNumber: null,
+						resultFound:null,
+						negativeNumber:null
+					})
 				}
-
-				this.setState({
-					previousInputValue: 0,
-					inputValue: [eval(previousInputValue + symbol + inputValue) == Infinity ? "Math Error" 
-								:eval(previousInputValue + symbol + inputValue)],
-					selectedSymbol: null,
-					selectedDecimalPoint:null,
-					fractionPrecision:0,
-					resultFound:true
-				});
+				break;
+			case '*' :
+				if( (controlState == 3 || controlState == 5) || resultFound == true )
+				{
+					controlStateHistory.push(controlState)
+					this.setState({
+						inputValue: inputValue + "*",
+						controlState:4,
+						MixedNumber: null,
+						resultFound:null,
+						negativeNumber:null
+					})
+				}
+				break;
+			case '+' :
+				if( (controlState == 3 || controlState == 5) || resultFound == true )
+				{
+					controlStateHistory.push(controlState)
+					this.setState({
+						inputValue: inputValue + "+",
+						controlState:4,
+						MixedNumber: null,
+						resultFound:null,
+						negativeNumber:true
+					})
+				}
+				break;
+			case '-' :
+				if( (controlState == 2 || controlState == 3 || controlState == 5 ||
+					 controlState == 1 || controlState == 4 || resultFound == true ) && negativeNumber != true )
+				{
+					controlStateHistory.push(controlState)
+					if(inputValue==0)
+					{
+						this.setState({
+							inputValue:  "-"
+						})
+					}
+					else
+					{
+						this.setState({
+							//inputValue: [inputValue == 0 ? "-" : inputValue + "-"], // Commented out because buggs out the delete button
+							inputValue: inputValue + "-"
+						})
+					}
+					this.setState({
+						controlState:7,
+						MixedNumber: null,
+						resultFound:null,
+						negativeNumber:true
+					})
+				}
+				break;
+			case '=' :
+				if(openParenthesisCount==closeParenthesisCount && controlState == 3 || controlState == 5 )
+				{
+					this.setState({
+						controlState : 1,
+						//inputValue: [eval(previousInputValue + symbol + inputValue) == Infinity ? "Math Error" 
+									//:eval(previousInputValue + symbol + inputValue)],
+						inputValue: [eval(inputValue) == Infinity ? "Math Error" 
+									:eval(inputValue)],
+						resultFound:true
+					});
+					controlStateHistory.length = 0
+				}
 				break;
 		}
 	}
 
 	_handleNumberInput(num){
-		let isfraction = this.state.selectedDecimalPoint,
-		fractionPrecision = this.state.fractionPrecision,
+		let controlState = this.state.controlState,
+		inputValue = this.state.inputValue,
 		resultFound = this.state.resultFound;
 
-		if(isfraction)
+		if(controlState!=5)
 		{
-			if(resultFound==true)
+			if(resultFound == true)
 			{
-				inputValue = 0 + (num/(Math.pow(10,1)));
+				this.setState({
+					inputValue: num.toString(),
+				})
 			}
 			else
 			{
-				inputValue = this.state.inputValue + (num/(Math.pow(10,fractionPrecision)));
+				this.setState({
+					inputValue:inputValue == "0" ? num.toString() : inputValue + num.toString(),
+				})
 			}
-			//Inline if statement messes with input variable ( end up with 0.2.002 as input etc)
-			//inputValue = [resultFound == true ? 0 + (num/(Math.pow(10,1))) : (this.state.inputValue) + (num/(Math.pow(10,fractionPrecision)))];
-			
+			controlStateHistory.push(controlState)
 			this.setState({
-				fractionPrecision:fractionPrecision+1
-				
-			})
+				resultFound:null,
+				controlState:3,
+				negativeNumber:null
+			})			
 		}
-		else
-		{
-			if(resultFound==true)
-			{
-				inputValue = num;
-			}
-			else
-			{
-				inputValue = (this.state.inputValue * 10) + num;
-			}
-			//Inline if statement messes with input variable ( end up with 0.2.002 as input etc)
-			//inputValue = [resultFound == true ? num : (this.state.inputValue * 10) + num];
-		}
-
-		this.setState({
-			inputValue:inputValue,
-			resultFound:null
-		})
 	}
 
 }
-
-/*
-const Styles = StyleSheet.create({
-	rootContainer: {
-		flex : 1
-	},
-	displayContainer: {
-		flex: 2 ,
-		backgroundColor: '#193441',
-	},
-	inputContainer: {
-		flex: 8 ,
-		backgroundColor: '#3E606F'
-	},
-});
-*/
-
-//AppRegistry.registerComponent('ReactCalculator', () => ReactCalculator);

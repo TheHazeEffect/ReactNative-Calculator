@@ -1,5 +1,4 @@
-
-import React, {Component} from 'react';
+asdasd
 import { View,Text} from 'react-native';
 import Style from './Style.js';
 import InputButton from './InputButton';

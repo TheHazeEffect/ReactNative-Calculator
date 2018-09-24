@@ -1,4 +1,4 @@
-# ReactNative-Calculator 2.1
+# ReactNative-Calculator 2.0
 
 Patch Notes 
 

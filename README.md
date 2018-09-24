@@ -2,9 +2,8 @@
 
 Patch Notes 
 
-- Fixed Clearing input crash bug
-- Fixed Deciaml Point not working after clearing bug
+- Ability to enter complete Math Equation 
+- Added Parenthesis "()"
+- Added Clear Everything (CE) Button
+- Added Clear(C) single input Button
 
-Bugs to fix 
-
-App crashes when any calculation is done with a fraction that begins with negative sign and recursive 0s as it's Whole number portion 

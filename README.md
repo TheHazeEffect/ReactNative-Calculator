@@ -1,7 +1,10 @@
-# ReactNative-Calculator 2.0
+React Calculator 2.1 
 
-Update History -
-Added Delete Previous Input
-Added Parethesis 
-Added Order of Operation Capability 
-Changed to entering full Equation before submitting for result
+Patch Notes
+
+- Fixed Clearing input crash bug
+- Fixed Deciaml Point not working after clearing bug
+
+---Bugs to Fix
+
+Crashes when any calculation is made with decimal numbers that start with a negative sign and recuring zeros before the deicimal point

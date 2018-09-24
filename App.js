@@ -94,18 +94,27 @@ export default class ReactCalculator extends Component {
 
 		switch(str){
 			case 'C' :
-				var previousControlState = controlStateHistory.pop()
-				if(controlState==7)
+				if(controlState != 1)
 				{
+					var previousControlState = controlStateHistory.pop()
+					if(controlState==7)
+					{
+						this.setState({
+							negativeNumber:null
+						})
+					}
+					if(controlState==6)
+					{
+						this.setState({
+							MixedNumber:null
+						})
+					}
+					inputValue = inputValue.slice(0,-1)
 					this.setState({
-						negativeNumber:null
-					})
+						inputValue: inputValue,
+						controlState: previousControlState
+					});
 				}
-				inputValue = inputValue.slice(0,-1)
-				this.setState({
-					inputValue: inputValue,
-					controlState: previousControlState
-				});
 				break;
 			case 'CE':
 			
